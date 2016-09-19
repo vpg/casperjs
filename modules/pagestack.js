@@ -99,6 +99,10 @@ Stack.prototype.find = function find(popupInfo) {
                 throw new CasperError("Invalid or missing popup.");
             }
             break;
+        case "number":
+            popup = this.findByIndex(popupInfo);
+            break;
+        case "undefined":
         case "null":
             // If no popup identifier given, try to get the first one in the stack
             popup = this.findByIndex(0);
