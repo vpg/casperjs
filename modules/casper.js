@@ -2515,6 +2515,8 @@ Casper.prototype.withFrame = function withFrame(frameInfo, then) {
 /**
  * Makes the provided frame page as the currently active one. Note that the
  * active page will be reverted when finished.
+ * if no 'popupInfo' given, the 1st popup in the stack will be used
+ * through Pagestack.find()
  *
  * @param  String|RegExp|WebPage  popup  Target frame page information
  * @param  Function               then   Next step function
@@ -2542,6 +2544,46 @@ Casper.prototype.withPopup = function withPopup(popupInfo, then) {
         // revert to main page
         this.page = this.mainPage;
     });
+};
+
+/**
+ * Makes the provided frame page as the currently active one. Note that the
+ * active page WON'T be reverted to the main page when finished.
+ * if no 'popupInfo' given, the 1st popup in the stack will be used
+ * through Pagestack.find()
+ *
+ * @param  String|RegExp|WebPage  popup  Target frame page information
+ * @param  Function               then   Next step function
+ * @return Casper
+ */
+Casper.prototype.selectPopup = function selectPopup(popupInfo, then) {
+    "use strict";
+    this.then(function _step() {
+        var popupPage = this.popups.find(popupInfo);
+        if (!utils.isFunction(then)) {
+            throw new CasperError("selectPopup() requires a step function.");
+        }
+        // make the popup page the currently active one
+        this.page = popupPage;
+    });
+    return this.then(then);
+};
+
+/**
+ * Makes the main page as the active one
+ *
+ * @param  Function then Next step function
+ * @return Casper
+ */
+Casper.prototype.selectMainPage = function selectMainPage(then) {
+    "use strict";
+    this.then(function _step() {
+        if (!this.mainPage) {
+            throw new CasperError("No main page found");
+        }
+        this.page = this.mainPage;
+    });
+    return this.then(then);
 };
 
 /**
@@ -2766,6 +2808,7 @@ function createPage(casper) {
     page.onUrlChanged = function onUrlChanged(url) {
         casper.log(f('url changed to "%s"', url), "debug");
         casper.navigationRequested = false;
+	casper.requestUrl = url;
         casper.emit('url.changed', url);
     };
     casper.emit('page.created', page);
