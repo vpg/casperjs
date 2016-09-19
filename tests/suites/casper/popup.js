@@ -3,7 +3,7 @@
 var utils = require('utils');
 var x = require('casper').selectXPath;
 
-casper.test.begin('popup tests', 22, function(test) {
+casper.test.begin('popup tests', 27, function(test) {
     casper.once('popup.created', function(popup) {
         test.pass('"popup.created" event is fired');
         test.assert(utils.isWebPage(popup),
@@ -51,6 +51,20 @@ casper.test.begin('popup tests', 22, function(test) {
             'Casper.withPopup() has reverted to main page after using the popup');
     });
 
+    // test selectPopup
+    casper.selectPopup(null, function() {
+        test.assertTitle('CasperJS test index',
+            'Casper.selectPopup() found the 1st popup with expected title');
+    });
+    casper.then(function() {
+        test.assertUrlMatches(/index\.html$/,
+            'Casper.selectPopup() has not reverted to main page after using the popup');
+    });
+    casper.selectMainPage(function() {
+        test.assertUrlMatches(/popup\.html$/,
+            'Casper.selectMainPage() has now reverted to main page');
+    });
+
     casper.thenClick('.close', function() {
         test.assertEquals(this.popups.length, 0, 'Popup is removed when closed');
     });
@@ -64,6 +78,15 @@ casper.test.begin('popup tests', 22, function(test) {
     casper.withPopup(/index\.html$/, function() {
         test.assertTitle('CasperJS test index',
             'Casper.withPopup() can use a regexp to identify popup');
+    });
+    
+    casper.withPopup(null, function() {
+        test.assertTitle('CasperJS test index',
+            'Casper.withPopup() without popup identifier, use the 1st popup as the active one');
+    });
+    casper.withPopup(0, function() {
+        test.assertTitle('CasperJS test index',
+            'Casper.withPopup() can use an index (number) to identify a popup in the current stack');
     });
 
     casper.thenClick('.close', function() {
