@@ -73,6 +73,7 @@ Stack.prototype.clean = function clean() {
  * - RegExp: matching page url
  * - String: strict page url value
  * - WebPage: a direct WebPage instance
+ * If null given, returns the 1st popup in the stack, if it exists.
  *
  * @param  Mixed  popupInfo
  * @return WebPage
@@ -98,6 +99,10 @@ Stack.prototype.find = function find(popupInfo) {
                 throw new CasperError("Invalid or missing popup.");
             }
             break;
+        case "null":
+            // If no popup identifier given, try to get the first one in the stack
+            popup = this.findByIndex(0);
+            break;
         default:
             throw new CasperError(f("Invalid popupInfo type: %s.", type));
     }
@@ -117,6 +122,21 @@ Stack.prototype.findByRegExp = function findByRegExp(regexp) {
     })[0];
     if (!popup) {
         throw new CasperError(f("Couldn't find popup with url matching pattern %s", regexp));
+    }
+    return popup;
+};
+
+/**
+ * Finds the popup stored at the given index in the stack
+ *
+ * @param  Number  index  The webpage index in the stack
+ * @return WebPage
+ */
+Stack.prototype.findByIndex = function findByIndex(index) {
+    "use strict";
+    var popup = this[index];
+    if (!popup) {
+        throw new CasperError(f("Couldn't find popup in the stack at index %d", index));
     }
     return popup;
 };
