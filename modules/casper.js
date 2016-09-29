@@ -2583,6 +2583,9 @@ Casper.prototype.selectMainPage = function selectMainPage(then) {
         }
         this.page = this.mainPage;
     });
+    if (!utils.isFunction(then)) {
+        return this;
+    }
     return this.then(then);
 };
 
@@ -2808,7 +2811,7 @@ function createPage(casper) {
     page.onUrlChanged = function onUrlChanged(url) {
         casper.log(f('url changed to "%s"', url), "debug");
         casper.navigationRequested = false;
-	casper.requestUrl = url;
+        casper.requestUrl = url;
         casper.emit('url.changed', url);
     };
     casper.emit('page.created', page);
