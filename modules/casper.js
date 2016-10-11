@@ -448,6 +448,7 @@ Casper.prototype.checkStarted = function checkStarted() {
  */
 Casper.prototype.clear = function clear() {
     "use strict";
+    this.page = this.mainPage;
     this.checkStarted();
     this.page.content = '';
     return this;
