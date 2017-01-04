@@ -55,6 +55,18 @@
             41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1
         ];
         var SUPPORTED_SELECTOR_TYPES = ['css', 'xpath'];
+        var XPATH_NAMESPACE = {
+            svg: 'http://www.w3.org/2000/svg',
+            mathml: 'http://www.w3.org/1998/Math/MathML'
+        };
+
+        function form_urlencoded(str) {
+            return encodeURIComponent(str)
+                    .replace(/%20/g, '+')
+                    .replace(/[!'()*]/g, function(c) {
+                        return '%' + c.charCodeAt(0).toString(16);
+                    });
+        }
 
         // public members
         this.options = options || {};
@@ -543,7 +555,7 @@
          */
         this.getElementByXPath = function getElementByXPath(expression, scope) {
             scope = scope || this.options.scope;
-            var a = document.evaluate(expression, scope, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            var a = document.evaluate(expression, scope, this.xpathNamespaceResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             if (a.snapshotLength > 0) {
                 return a.snapshotItem(0);
             }
@@ -559,11 +571,21 @@
         this.getElementsByXPath = function getElementsByXPath(expression, scope) {
             scope = scope || this.options.scope;
             var nodes = [];
-            var a = document.evaluate(expression, scope, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            var a = document.evaluate(expression, scope, this.xpathNamespaceResolver, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
             for (var i = 0; i < a.snapshotLength; i++) {
                 nodes.push(a.snapshotItem(i));
             }
             return nodes;
+        };
+
+        /**
+         * Build the xpath namespace resolver to evaluate on document
+         *
+         * @param String        prefix   The namespace prefix
+         * @return the resolve namespace or null
+         */
+        this.xpathNamespaceResolver = function xpathNamespaceResolver(prefix) {
+          return XPATH_NAMESPACE[prefix] || null;
         };
 
         /**
@@ -881,8 +903,8 @@
                 if (typeof data === "object") {
                     for (var k in data) {
                         if (data.hasOwnProperty(k)) {
-                            dataList.push(encodeURIComponent(k) + "=" +
-                             encodeURIComponent(data[k].toString()));
+                            dataList.push(form_urlencoded(k) + "=" +
+                             form_urlencoded(data[k].toString()));
                         }
                     }
                     dataString = dataList.join('&');

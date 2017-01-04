@@ -180,12 +180,12 @@ Compilation (Optionaly)
 Known Bugs & Limitations
 ------------------------
 
-- Due to its asynchronous nature, CasperJS doesn't work well with `PhantomJS' REPL <http://code.google.com/p/phantomjs/wiki/InteractiveModeREPL>`_.
+- Due to its asynchronous nature, CasperJS doesn't work well with `PhantomJS' REPL <http://phantomjs.org/repl.html>`_.
 
-.. _Homebrew: http://mxcl.github.com/homebrew/
+.. _Homebrew: http://brew.sh/
 .. _PhantomJS: http://phantomjs.org/
 .. _Python: http://python.org/
 .. _SlimerJS: http://slimerjs.org/
 .. _ansicon: https://github.com/adoxa/ansicon
 .. _Mono: http://www.mono-project.com/
-.. _ConEmu: https://code.google.com/p/conemu-maximus5/
+.. _ConEmu: https://conemu.github.io/

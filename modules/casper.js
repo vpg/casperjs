@@ -196,22 +196,18 @@ var Casper = function Casper(options) {
             notices.push('  in module ' + match[2]);
             msg = match[3];
         }
-        /* FIXME:
-        this leads to a recursive on('error'...) trigger,
-        at least in phantomjs2
 
-        console.error(c.colorize(msg, 'RED_BAR', 80));
+        console.log(c.colorize(msg, 'RED_BAR', 80));
         notices.forEach(function(notice) {
-            console.error(c.colorize(notice, 'COMMENT'));
+            console.log(c.colorize(notice, 'COMMENT'));
         });
         (backtrace || []).forEach(function(item) {
             var message = fs.absolute(item.file) + ":" + c.colorize(item.line, "COMMENT");
             if (item['function']) {
                 message += " in " + c.colorize(item['function'], "PARAMETER");
             }
-            console.error("  " + message);
+            console.log("  " + message);
         });
-        */
     });
 
     // deprecated feature event handler
@@ -365,7 +361,13 @@ Casper.prototype.captureBase64 = function captureBase64(format, area) {
     } else if (utils.isValidSelector(area)) {
         // if area is a selector string or object
         this.log(f("Capturing base64 %s representation of %s", format, area), "debug");
-        base64 = this.captureBase64(format, this.getElementBounds(area));
+        var scrollPos = this.evaluate(function() {
+            return { x: scrollX, y: scrollY };
+        });
+        var elementBounds = this.getElementBounds(area);
+        elementBounds.top += scrollPos.y;
+        elementBounds.left += scrollPos.x;
+        base64 = this.captureBase64(format, elementBounds);
     } else {
         // whole page capture
         this.log(f("Capturing base64 %s representation of page", format), "debug");
@@ -386,7 +388,13 @@ Casper.prototype.captureBase64 = function captureBase64(format, area) {
  */
 Casper.prototype.captureSelector = function captureSelector(targetFile, selector, imgOptions) {
     "use strict";
-    return this.capture(targetFile, this.getElementBounds(selector), imgOptions);
+    var scrollPos = this.evaluate(function() {
+        return { x: scrollX, y: scrollY };
+    });
+    var elementBounds = this.getElementBounds(selector);
+    elementBounds.top += scrollPos.y;
+    elementBounds.left += scrollPos.x;
+    return this.capture(targetFile, elementBounds, imgOptions);
 };
 
 /**
@@ -717,7 +725,16 @@ Casper.prototype.evaluate = function evaluate(fn, context) {
     } else if (arguments.length === 2) {
         // check for closure signature if it matches context
         if (utils.isObject(context) && eval(fn).length === Object.keys(context).length) {
-            context = utils.objectValues(context);
+            /*
+             * in case if user passes argument as one array with only one object.
+             * evaluate shlould return original array with one object
+             * instead of converte this array to object
+             */
+            if (utils.isArray(context) && context.length === 1) {
+                context = [context];
+            } else {
+                context = utils.objectValues(context);
+            }
         } else {
             context = [context];
         }
@@ -1465,6 +1482,7 @@ Casper.prototype.open = function open(location, settings) {
     this.log(f('opening url: %s, HTTP %s', this.requestUrl, settings.method.toUpperCase()), "debug");
     // reset resources
     this.resources = [];
+    this.resourcesTime = [];
     // custom headers
     this.page.customHeaders = utils.mergeObjects(utils.clone(baseCustomHeaders), customHeaders);
     // perfom request
@@ -2738,6 +2756,9 @@ function createPage(casper) {
         casper.emit('load.finished', status);
         casper.loadInProgress = false;
     };
+    page.onLongRunningScript = function onLongRunningScript() {
+        casper.emit('remote.longRunningScript', this);
+    };
     page.onNavigationRequested = function onNavigationRequested(url, type, willNavigate, isMainFrame) {
         casper.log(f('Navigation requested: url=%s, type=%s, willNavigate=%s, isMainFrame=%s',
                      url, type, willNavigate, isMainFrame), "debug");
@@ -2808,6 +2829,9 @@ function createPage(casper) {
     };
     page.onResourceError = function onResourceError(resourceError) {
         casper.emit('resource.error', resourceError);
+    };
+    page.onResourceTimeout = function onResourceTimeout(resourceError) {
+        casper.emit('resource.timeout', resourceError);
     };
     page.onUrlChanged = function onUrlChanged(url) {
         casper.log(f('url changed to "%s"', url), "debug");
